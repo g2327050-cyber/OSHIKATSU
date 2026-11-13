@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>受付入力フォーム</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
+    .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
+    .hidden { display: none; }
+    input, select, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; font-size: 16px; }
+    button { background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>カスタムカード入力</h2>
+
+  <form id="entryForm" onsubmit="submitForm(event)">
+    <div class="card">
+      <label><b>画像テンプレートを選択 (1〜6)</b></label>
+      <select id="selectedProfile">
+        <option value="1">テンプレート 1</option>
+        <option value="2">テンプレート 2</option>
+        <option value="3">テンプレート 3</option>
+        <option value="4">テンプレート 4</option>
+        <option value="5">テンプレート 5</option>
+        <option value="6">テンプレート 6</option>
+      </select>
+
+      <label><b>スタッフ名</b></label>
+      <input type="text" id="staffName" placeholder="例：山田 太郎" required>
+
+      <label><b>推しの名前</b></label>
+      <input type="text" id="oshiName" placeholder="例：〇〇ちゃん" required>
+
+      <label><b>プロフタイプ</b></label>
+      <input type="text" id="profType" placeholder="例：クール系" required>
+
+      <button type="submit" id="submitBtn">送信する</button>
+    </div>
+  </form>
+
+  <div id="completeMsg" class="card hidden" style="text-align: center;">
+    <h3>送信が完了しました！</h3>
+    <p>ご協力ありがとうございました。<br>数秒後に自動で新しい入力画面に戻ります。</p>
+  </div>
+
+  <script>
+    // ★ご自身のGASのデプロイURLに書き換えてください★
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbykbZDhJb0DYwPT94q27Htr6yn9PHrXnhiNL5THWzJc34SHa5RfHtsDcHu1dVZc7JsE/exec";
+
+    // URLの ?id=1 から端末IDを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const terminalId = urlParams.get('id') || '1';
+
+    async function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = "送信中...";
+
+      const payload = {
+        terminalId: terminalId,
+        selectedProfile: document.getElementById('selectedProfile').value,
+        staffName: document.getElementById('staffName').value,
+        oshiName: document.getElementById('oshiName').value,
+        profType: document.getElementById('profType').value
+      };
+
+      try {
+        await fetch(GAS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById('entryForm').classList.add('hidden');
+        document.getElementById('completeMsg').classList.remove('hidden');
+
+        // 3秒後にリロードして初期化（?id=1 などのURLパラメータは維持）
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+
+      } catch (err) {
+        alert("送信エラーが発生しました");
+        btn.disabled = false;
+        btn.innerText = "送信する";
+      }
+    }
+  </script>
+</body>
+</html>
