@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>【管理者】プレビュー＆印刷画面</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .container { display: flex; gap: 20px; }
+    .controls { width: 300px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+    .preview-area { flex-grow: 1; }
+    canvas { border: 1px solid #999; background-color: #f9f9f9; }
+    input { width: 100%; padding: 8px; margin: 5px 0 15px; box-sizing: border-box; }
+    button { padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    @media print {
+      body * { visibility: hidden; }
+      #previewCanvas, #previewCanvas * { visibility: visible; }
+      #previewCanvas { position: absolute; left: 0; top: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>カードプレビュー・微調整画面</h2>
+
+  <div class="container">
+    <!-- 左側：微調整フォーム -->
+    <div class="controls">
+      <h3>文字位置・内容の調整</h3>
+      <label>スタッフ名:</label>
+      <input type="text" id="editStaff" value="サンプルスタッフ" oninput="drawCanvas()">
+
+      <label>推しの名前:</label>
+      <input type="text" id="editOshi" value="サンプル推し" oninput="drawCanvas()">
+
+      <label>プロフタイプ:</label>
+      <input type="text" id="editType" value="サンプルタイプ" oninput="drawCanvas()">
+
+      <br><br>
+      <button onclick="window.print()">この画像を印刷する</button>
+    </div>
+
+    <!-- 右側：リアルタイムプレビュー（画像合成表示） -->
+    <div class="preview-area">
+      <canvas id="previewCanvas" width="600" height="400"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 画面が開いたとき・文字を書き換えたときに自動で画像を再描画
+    function drawCanvas() {
+      // 1. 背景（ベースカード）の描画
+      ctx.fillStyle = "#f0f4f8";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 枠線を描画
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+      // 2. 文字の描画設定
+      ctx.fillStyle = "#333333";
+
+      // スタッフ名の描画
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillText("スタッフ名:", 40, 80);
+      ctx.font = "24px sans-serif";
+      ctx.fillText(document.getElementById('editStaff').value, 180, 80);
+
+      // 推しの名前の描画
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillText("推しの名前:", 40, 150);
+      ctx.font = "24px sans-serif";
+      ctx.fillText(document.getElementById('editOshi').value, 180, 150);
+
+      // プロフタイプの描画
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillText("プロフタイプ:", 40, 220);
+      ctx.font = "24px sans-serif";
+      ctx.fillText(document.getElementById('editType').value, 180, 220);
+    }
+
+    // 初回描画
+    window.onload = drawCanvas;
+  </script>
+</body>
+</html>
