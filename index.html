@@ -1,95 +1,274 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>受付入力フォーム</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
-    .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
-    .hidden { display: none; }
-    input, select, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; font-size: 16px; }
-    button { background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>推し活スタッフ登録</title>
+<style>
+  body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 16px; color: #333; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+  h2 { text-align: center; font-size: 1.2rem; margin-top: 0; }
+  .carousel { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; background: #eef2f7; padding: 20px 10px; border-radius: 8px; }
+  .carousel button { font-size: 1.5rem; background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; }
+  .profile-display { text-align: center; flex: 1; padding: 0 10px; }
+  .profile-num { font-size: 0.85rem; color: #666; }
+  .profile-name { font-size: 1.3rem; font-weight: bold; color: #2b547e; margin-top: 4px; }
+  .btn { display: block; width: 100%; padding: 14px; font-size: 1rem; font-weight: bold; color: #fff; background: #007bff; border: none; border-radius: 8px; cursor: pointer; margin-top: 16px; }
+  .btn-secondary { background: #6c757d; }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; }
+  input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+  input[readonly] { background: #e9ecef; color: #555; }
+  .hidden { display: none !important; }
+  /* モーダル */
+  .modal-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal-box { background: #fff; padding: 24px; border-radius: 12px; width: 85%; max-width: 340px; text-align: center; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-btns button { flex: 1; margin-top: 0; }
+  .confirm-item { border-bottom: 1px solid #eee; padding: 8px 0; font-size: 0.9rem; }
+  .confirm-item span { font-weight: bold; display: block; color: #555; font-size: 0.8rem; }
+</style>
 </head>
 <body>
 
-  <h2>カスタムカード入力</h2>
-
-  <form id="entryForm" onsubmit="submitForm(event)">
-    <div class="card">
-      <label><b>画像テンプレートを選択 (1〜6)</b></label>
-      <select id="selectedProfile">
-        <option value="1">テンプレート 1</option>
-        <option value="2">テンプレート 2</option>
-        <option value="3">テンプレート 3</option>
-        <option value="4">テンプレート 4</option>
-        <option value="5">テンプレート 5</option>
-        <option value="6">テンプレート 6</option>
-      </select>
-
-      <label><b>スタッフ名</b></label>
-      <input type="text" id="staffName" placeholder="例：山田 太郎" required>
-
-      <label><b>推しの名前</b></label>
-      <input type="text" id="oshiName" placeholder="例：〇〇ちゃん" required>
-
-      <label><b>プロフタイプ</b></label>
-      <input type="text" id="profType" placeholder="例：クール系" required>
-
-      <button type="submit" id="submitBtn">送信する</button>
+<!-- 画面1：プロフィール選択 -->
+<div id="step-select" class="card">
+  <h2>あなたの推し活タイプを選んでください</h2>
+  <div class="carousel">
+    <button type="button" onclick="changeProfile(-1)">◀</button>
+    <div class="profile-display">
+      <div id="prof-num" class="profile-num">1 / 6</div>
+      <div id="prof-name" class="profile-name">ノーマルタイプ</div>
     </div>
-  </form>
-
-  <div id="completeMsg" class="card hidden" style="text-align: center;">
-    <h3>送信が完了しました！</h3>
-    <p>ご協力ありがとうございました。<br>数秒後に自動で新しい入力画面に戻ります。</p>
+    <button type="button" onclick="changeProfile(1)">▶</button>
   </div>
+  <button type="button" class="btn" onclick="decideProfile()">決定</button>
+</div>
 
-  <script>
-    // ★ご自身のGASのデプロイURLに書き換えてください★
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbykbZDhJb0DYwPT94q27Htr6yn9PHrXnhiNL5THWzJc34SHa5RfHtsDcHu1dVZc7JsE/exec";
+<!-- 画面2：プロフィール入力 -->
+<div id="step-input" class="card hidden">
+  <h2 id="input-title">プロフィール入力</h2>
+  <form id="prof-form">
+    <div class="form-group"><label>スタッフ名</label><input type="text" id="staffName" required></div>
+    <div class="form-group"><label>年齢</label><input type="number" id="age"></div>
+    <div class="form-group"><label>性別</label>
+      <select id="gender"><option value="">選択してください</option><option>男性</option><option>女性</option><option>その他・回答しない</option></select>
+    </div>
+    <div class="form-group"><label>推しの名前</label><input type="text" id="oshiName" required></div>
+    <div class="form-group"><label>推しを知ったきっかけ</label><input type="text" id="trigger"></div>
+    <div class="form-group"><label>推しの好きなところ</label><textarea id="likePoint" rows="2"></textarea></div>
+    <div class="form-group"><label>推し活のスタイル</label><input type="text" id="style"></div>
+    <div class="form-group"><label>推し活での幸せ・大切にしていること</label><textarea id="happiness" rows="2"></textarea></div>
 
-    // URLの ?id=1 から端末IDを取得
-    const urlParams = new URLSearchParams(window.location.search);
-    const terminalId = urlParams.get('id') || '1';
+    <!-- タイプ別分岐質問（Q1〜Q4） -->
+    <div id="branch-questions"></div>
 
-    async function submitForm(e) {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.innerText = "送信中...";
+    <div class="form-group"><label>フリースペース</label><textarea id="freeSpace" rows="3"></textarea></div>
+    <button type="button" class="btn" onclick="openConfirmModal()">入力完了</button>
+  </form>
+</div>
 
-      const payload = {
-        terminalId: terminalId,
-        selectedProfile: document.getElementById('selectedProfile').value,
-        staffName: document.getElementById('staffName').value,
-        oshiName: document.getElementById('oshiName').value,
-        profType: document.getElementById('profType').value
-      };
+<!-- 確認タブ（モーダル） -->
+<div id="confirm-modal" class="modal-bg hidden">
+  <div class="modal-box">
+    <h3>入力をおわる？</h3>
+    <div class="modal-btns">
+      <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">いいえ</button>
+      <button type="button" class="btn" onclick="goToReview()">はい</button>
+    </div>
+  </div>
+</div>
 
-      try {
-        await fetch(GAS_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+<!-- 画面3：入力内容の確認（PC保存実行済） -->
+<div id="step-review" class="card hidden">
+  <h2>入力内容の確認</h2>
+  <p style="font-size:0.85rem; color:#666;">※データはPC側に保存されました。内容を確認して「次へ」を押してください。</p>
+  <div id="review-list"></div>
+  <button type="button" class="btn" onclick="goToFinish()">次へ</button>
+</div>
 
-        document.getElementById('entryForm').classList.add('hidden');
-        document.getElementById('completeMsg').classList.remove('hidden');
+<!-- 画面4：提出完了 -->
+<div id="step-finish" class="card hidden" style="text-align:center; padding: 40px 20px;">
+  <h2>スタッフに提出しました</h2>
+  <p>ご協力ありがとうございました！</p>
+</div>
 
-        // 3秒後にリロードして初期化（?id=1 などのURLパラメータは維持）
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
+<script>
+  // ★ここにGASのウェブアプリURLを貼り付けてください
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbw86vQY8KqhNnzgH1I0dFV01qHceyWDajWKkuKWfHtU3t6Wt_aQsf0bL_k6xptbBROY/exec";
 
-      } catch (err) {
-        alert("送信エラーが発生しました");
-        btn.disabled = false;
-        btn.innerText = "送信する";
-      }
+  // URLから端末ID（?id=1 など）を取得
+  const urlParams = new URLSearchParams(window.location.search);
+  const deviceId = urlParams.get('id') || '未設定';
+
+  // 6種類のプロフィール定義（順番1〜6固定）
+  const profiles = [
+    {
+      id: 1, name: "ノーマルタイプ", fixedStyle: false,
+      questions: [
+        { label: "よくいく場所・参加するもの", type: "select", options: ["ライブ・コンサート", "イベント・展示会", "聖地巡礼", "コラボカフェ", "自宅（配信・SNS）", "その他"] },
+        { label: "1か月の推し活に使う時間", type: "text" },
+        { label: "1か月の推し活に使う金額", type: "text" },
+        { label: "よく使うお金の使い道", type: "select", options: ["チケット・遠征費", "グッズ購入", "CD・円盤・書籍", "課金・スパチャ", "飲食・コラボ", "その他"] }
+      ]
+    },
+    {
+      id: 2, name: "現地遠征タイプ", fixedStyle: true,
+      questions: [
+        { label: "よくいく場所・参加するもの", type: "select", options: ["ライブ・コンサート", "舞台・観劇", "イベント・握手会", "聖地巡礼", "その他"] },
+        { label: "最近行った場所・参加したもの", type: "text" },
+        { label: "行動範囲", type: "text" },
+        { label: "一番思い出に残っていること", type: "text" }
+      ]
+    },
+    {
+      id: 3, name: "日常をともにタイプ", fixedStyle: true,
+      questions: [
+        { label: "推しと一緒によく行く場所", type: "text" },
+        { label: "お出かけに連れていく推しグッズ", type: "text" },
+        { label: "1か月の推し活に使う金額", type: "text" },
+        { label: "推しがいることで日常に変化したこと", type: "text" }
+      ]
+    },
+    {
+      id: 4, name: "ものであふれるタイプ", fixedStyle: true,
+      questions: [
+        { label: "最近買った推しグッズ", type: "text" },
+        { label: "1か月の予算", type: "text" },
+        { label: "自慢したいもの", type: "text" },
+        { label: "推しグッズを1つだけ残すなら何を選ぶ？", type: "text" }
+      ]
+    },
+    {
+      id: 5, name: "情報収集タイプ", fixedStyle: true,
+      questions: [
+        { label: "推しの情報を追うためにチェックしているもの", type: "text" },
+        { label: "1日にどれくらい配信・動画を見る？", type: "text" },
+        { label: "推しに関するもので一番好きなものは？", type: "text" },
+        { label: "よく使うお金の使い道", type: "select", options: ["サブスク・配信チケット", "課金・スパチャ", "雑誌・書籍・資料", "グッズ・円盤", "その他"] }
+      ]
+    },
+    {
+      id: 6, name: "周りの人と交流タイプ", fixedStyle: true,
+      questions: [
+        { label: "ファン同士で交流する一番の楽しみは？", type: "text" },
+        { label: "SNSではどんな内容を投稿することが多い？", type: "text" },
+        { label: "行動範囲", type: "text" },
+        { label: "推しを通じて新しく出会えたもの・人は？", type: "text" }
+      ]
     }
-  </script>
+  ];
+
+  let currentIndex = 0;
+  let selectedProfile = profiles[0];
+  let formData = {};
+
+  function changeProfile(dir) {
+    currentIndex = (currentIndex + dir + profiles.length) % profiles.length;
+    document.getElementById('prof-num').textContent = `${profiles[currentIndex].id} / 6`;
+    document.getElementById('prof-name').textContent = profiles[currentIndex].name;
+  }
+
+  function decideProfile() {
+    selectedProfile = profiles[currentIndex];
+    document.getElementById('step-select').classList.add('hidden');
+    document.getElementById('step-input').classList.remove('hidden');
+    document.getElementById('input-title').textContent = `入力（${selectedProfile.name}）`;
+
+    const styleInput = document.getElementById('style');
+    if (selectedProfile.fixedStyle) {
+      styleInput.value = selectedProfile.name;
+      styleInput.readOnly = true;
+    } else {
+      styleInput.value = "";
+      styleInput.readOnly = false;
+    }
+
+    // 分岐質問の生成
+    const container = document.getElementById('branch-questions');
+    container.innerHTML = '';
+    selectedProfile.questions.forEach((q, idx) => {
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      let inputHtml = '';
+      if (q.type === 'select') {
+        const opts = q.options.map(o => `<option value="${o}">${o}</option>`).join('');
+        inputHtml = `<select id="q${idx + 1}"><option value="">選択してください</option>${opts}</select>`;
+      } else {
+        inputHtml = `<input type="text" id="q${idx + 1}">`;
+      }
+      div.innerHTML = `<label>${q.label}</label>${inputHtml}`;
+      container.appendChild(div);
+    });
+  }
+
+  function openConfirmModal() {
+    document.getElementById('confirm-modal').classList.remove('hidden');
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+  }
+
+  function goToReview() {
+    closeConfirmModal();
+    formData = {
+      deviceId: deviceId,
+      profType: selectedProfile.id,
+      staffName: document.getElementById('staffName').value,
+      age: document.getElementById('age').value,
+      gender: document.getElementById('gender').value,
+      oshiName: document.getElementById('oshiName').value,
+      trigger: document.getElementById('trigger').value,
+      likePoint: document.getElementById('likePoint').value,
+      style: document.getElementById('style').value,
+      happiness: document.getElementById('happiness').value,
+      q1: document.getElementById('q1').value,
+      q2: document.getElementById('q2').value,
+      q3: document.getElementById('q3').value,
+      q4: document.getElementById('q4').value,
+      freeSpace: document.getElementById('freeSpace').value
+    };
+
+    // スプレッドシート（PC側）へデータを送信・保存
+    if (GAS_URL.startsWith("http")) {
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+    }
+
+    // 確認画面の生成
+    const items = [
+      ["プロフィールタイプ", `${selectedProfile.id}：${selectedProfile.name}`],
+      ["スタッフ名", formData.staffName],
+      ["年齢", formData.age],
+      ["性別", formData.gender],
+      ["推しの名前", formData.oshiName],
+      ["推しを知ったきっかけ", formData.trigger],
+      ["推しの好きなところ", formData.likePoint],
+      ["推し活のスタイル", formData.style],
+      ["推し活での幸せ・大切にしていること", formData.happiness],
+      [selectedProfile.questions[0].label, formData.q1],
+      [selectedProfile.questions[1].label, formData.q2],
+      [selectedProfile.questions[2].label, formData.q3],
+      [selectedProfile.questions[3].label, formData.q4],
+      ["フリースペース", formData.freeSpace]
+    ];
+
+    const reviewList = document.getElementById('review-list');
+    reviewList.innerHTML = items.map(i => `<div class="confirm-item"><span>${i[0]}</span>${i[1] || '（未入力）'}</div>`).join('');
+
+    document.getElementById('step-input').classList.add('hidden');
+    document.getElementById('step-review').classList.remove('hidden');
+  }
+
+  function goToFinish() {
+    document.getElementById('step-review').classList.add('hidden');
+    document.getElementById('step-finish').classList.remove('hidden');
+  }
+</script>
 </body>
 </html>
